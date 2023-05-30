@@ -1,4 +1,6 @@
 <script setup>
+import "element-plus/theme-chalk/dark/css-vars.css";
+document.querySelector("html").className = ``;
 </script>
 
 <template>

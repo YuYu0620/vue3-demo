@@ -2,7 +2,9 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import legacy from '@vitejs/plugin-legacy'
 import viteCompression from 'vite-plugin-compression'
-
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -42,6 +44,12 @@ export default defineConfig(({ command, mode }) => {
       assetsDir: "static",
     },
     plugins: [
+      AutoImport({
+        resolvers: [ElementPlusResolver()],
+      }),
+      Components({
+        resolvers: [ElementPlusResolver()],
+      }),
       vue(),
       legacy({
         targets: ['ie >= 11'],

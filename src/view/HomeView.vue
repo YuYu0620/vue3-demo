@@ -1,15 +1,17 @@
 <script setup>
-import { ref } from "vue";
+import { ref, getCurrentInstance } from "vue";
 import { login } from "../api/login";
 import { useRouter } from "vue-router";
+import TimeInput from "../components/time.vue";
 defineProps({
   msg: String,
 });
 
 const count = ref(0);
-let username = ref("");
-let password = ref("");
+let username = ref("meixu");
+let password = ref("Aa123456");
 const router = useRouter();
+const { proxy } = getCurrentInstance();
 let loginFun = async () => {
   try {
     let data = {
@@ -17,23 +19,30 @@ let loginFun = async () => {
       password: password.value,
     };
     let res = await login(data);
-    console.log("res.data ============> ", res.data);
     if (res.code == 200) {
+      proxy.$messages({
+        message: "成功",
+        type: "success",
+      });
+      console.log("res.data ============> ", res.data);
       router.push({
         path: "/about",
       });
     }
   } catch (error) {}
 };
+let day = ref(0);
+let inputChange = (event) => {
+  day.value = event;
+  console.log("event =============> ", event);
+};
 </script>
 
 <template>
-  <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
-  </div>
-  <div>账号：<input type="text" v-model="username" /></div>
-  <div>密码：<input type="text" v-model="password" /></div>
-  <div @click="loginFun">登录</div>
+  <div>账号：<el-input type="text" v-model="username" /></div>
+  <div>密码：<el-input type="text" v-model="password" /></div>
+  <el-button type="primary" round @click="loginFun">登录</el-button>
+  <time-input @change="inputChange"></time-input>
 </template>
 
 <style scoped>
