@@ -11,7 +11,7 @@ const count = ref(0);
 let username = ref("meixu");
 let password = ref("Aa123456");
 const router = useRouter();
-
+const { proxy } = getCurrentInstance();
 let loginFun = async () => {
   try {
     let data = {
@@ -24,9 +24,11 @@ let loginFun = async () => {
         message: "成功",
         type: "success",
       });
-      console.log("res.data ============> ", res.data);
       router.push({
         path: "/about",
+        query: {
+          token: res.data.token,
+        },
       });
     }
   } catch (error) {}
