@@ -11,7 +11,7 @@ const count = ref(0);
 let username = ref("meixu");
 let password = ref("Aa123456");
 const router = useRouter();
-const { proxy } = getCurrentInstance();
+
 let loginFun = async () => {
   try {
     let data = {
