@@ -16,7 +16,15 @@ export default defineConfig(({ command, mode }) => {
             "/driverServApi/admin": {
               target: `http://10.3.3.21:9090`,
               changeOrigin: true,
-            }
+            },
+            '/socket': {
+              target: 'http://10.3.2.117:5137',
+              pathRewrite: {
+                '^/socket': ''
+              },
+              ws: true,
+              changeOrigin: true
+            },
           };
         case "prod":
           return {
@@ -73,8 +81,7 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
     },
     server: {
-      host: '10.3.2.107',
-      port: 8080,
+      host: '10.3.2.117',
       open: true,
       strictPort: false,
       https: false,

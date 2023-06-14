@@ -28,6 +28,7 @@ let loginFun = async () => {
         path: "/about",
         query: {
           token: res.data.token,
+          userName: username.value,
         },
       });
     }
