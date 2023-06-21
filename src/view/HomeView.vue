@@ -25,7 +25,7 @@ let loginFun = async () => {
         type: "success",
       });
       router.push({
-        path: "/about",
+        path: "/roomList",
         query: {
           token: res.data.token,
           userName: username.value,

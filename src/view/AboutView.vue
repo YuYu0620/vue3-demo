@@ -1,7 +1,7 @@
 <template>
   <div class="tableCss">
     <div class="onlineUser">
-      <div class="title">相亲相爱一家人</div>
+      <div class="title">{{ route.query.roomName }}</div>
       <div class="online">在线({{ onlineUser }})</div>
     </div>
     <div class="chatBox">
@@ -77,25 +77,25 @@ const route = useRoute();
 let query = reactive({});
 onMounted(() => {
   initWebSocket();
-  console.log("456");
+  window.addEventListener("beforeunload", handleBeforeUnload);
 });
 query = route.query;
 // 页面销毁清除定时器
 onBeforeUnmount(() => {
   heartbeatClearTimeout();
-  console.log("ws ===============>");
-  console.debug();
   if (webSocket.value && webSocket.value.readyState == webSocket.value.OPEN) {
     let data = {
       type: "cut",
       userName: query.userName,
       token: query.token,
+      roomId: query.roomId,
       content: "",
     };
     webSocket.value.send(JSON.stringify(data));
-    webSocket.value.close();
+    // webSocket.value.close();
     webSocket.value = null;
   }
+  window.removeEventListener("beforeunload", handleBeforeUnload);
 });
 
 let chatContainer = ref(null);
@@ -136,10 +136,9 @@ const onOpen = () => {
   // 发送心跳包或其他必要的初始化数据
   heartCheck();
   let data = {
-    type: "login",
-    token: query.token,
-    userName: query.userName,
-    content: "",
+    type: "getMessageList",
+    roomId: route.query.roomId,
+    userName: route.query.userName,
   };
   webSocket.value.send(JSON.stringify(data));
   getOnlineUser();
@@ -153,22 +152,14 @@ const onMessage = (event) => {
   heartCheck();
   if (!message.type) return;
   if (message.type == "heartbeat") return;
-  if (message.type == "getOnlineUser") {
-    onlineUser.value = message.msg;
-    return;
-  }
   if (message.type == "messageList") {
     chatList.value = message.list;
+    onlineUser.value = message.online;
     return;
   }
-  let data = null;
-  data = {
-    type: message.type,
-    content: message.content,
-    userName: message.userName,
-  };
-  if (!data) return;
-  chatList.value.push(data);
+  if (message.type == "self" || message.type == "others") {
+    chatList.value.push(message);
+  }
 };
 
 // 处理 WebSocket 连接关闭事件
@@ -216,9 +207,10 @@ const inputConfirm = () => {
   if (!value.value) return;
   console.log("value ==========> ", value.value);
   let data = {
-    type: "msg",
+    type: "sendingMsg",
     userName: query.userName,
     content: value.value,
+    roomId: query.roomId,
   };
   webSocket.value.send(JSON.stringify(data));
   value.value = "";
@@ -247,6 +239,26 @@ const startHeartbeat = () => {
     }, 60 * 1000);
   }, 10 * 1000);
 };
+// 浏览器刷新阻止
+const handleBeforeUnload = (event) => {
+  heartbeatClearTimeout();
+  console.log("退出", webSocket.value);
+  if (webSocket.value && webSocket.value.readyState == webSocket.value.OPEN) {
+    let data = {
+      type: "cut",
+      userName: query.userName,
+      token: query.token,
+      roomId: query.roomId,
+      content: "",
+    };
+    webSocket.value.send(JSON.stringify(data));
+    // webSocket.value.close();
+    webSocket.value = null;
+  }
+  // 通过 event.preventDefault() 可以阻止浏览器关闭或刷新
+  event.preventDefault();
+  // 通过 event.returnValue 可以设置提示消息？
+};
 
 // 获取在线人数
 const getOnlineUser = () => {
@@ -258,159 +270,6 @@ const getOnlineUser = () => {
     })
   );
 };
-
-// // 初始化webSocket
-// const initWebSocket = () => {
-//   if (ws) return;
-//   ws = new WebSocket("ws://localhost:8666");
-//   ws.onopen = WebSocketOnOpen;
-//   ws.onclose = WebSocketOnclose;
-//   ws.onmessage = WebSocketOnMessage;
-//   ws.onerror = WebSocketOnError;
-// };
-// // 页面销毁清除定时器
-// onBeforeUnmount(() => {
-//   heartbeatClearTimeout();
-//   console.log("ws ===============>");
-//   console.debug();
-//   if (ws && ws.readyState == ws.OPEN) {
-//     let data = {
-//       type: "cut",
-//       userName: query.userName,
-//       token: query.token,
-//       content: "",
-//     };
-//     ws.send(JSON.stringify(data));
-//     ws.close();
-//     ws = null;
-//   }
-// });
-// // 链接成功回调
-// const WebSocketOnOpen = (e) => {
-//   console.log("连接服务器成功");
-//   if (errorNum == 1) {
-//     proxy.$messages({
-//       message: "连接成功",
-//       type: "success",
-//     });
-//   }
-//   errorNum = 0;
-//   startWs.value = true;
-//   // 重置心跳
-//   heartCheck();
-//   console.log("query.userName =========> ", query.userName);
-//   let data = {
-//     type: "login",
-//     token: query.token,
-//     userName: query.userName,
-//     content: "",
-//   };
-//   ws.send(JSON.stringify(data));
-// };
-// // 服务器关闭的回调
-// function WebSocketOnclose(e) {
-//   console.log("服务器关闭");
-//   if (errorNum == 0) {
-//     errorNum = 1;
-//     dialogVisible.value = true;
-//   } else {
-//     proxy.$messages({
-//       message: "连接失败，请检查网络等设备",
-//       type: "success",
-//     });
-//     heartbeatClearTimeout();
-//     startWs.value = false;
-//   }
-//   // setTimeout(() => {
-//   //   initWebSocket();
-//   // }, 3000);
-// }
-// // 链接异常关闭的回调
-// function WebSocketOnError(e) {
-//   console.log("连接出错");
-//   if (errorNum == 0) {
-//     errorNum = 1;
-//     dialogVisible.value = true;
-//   } else {
-//     proxy.$messages({
-//       message: "连接失败，请检查网络等设备",
-//       type: "success",
-//     });
-//     heartbeatClearTimeout();
-//     startWs.value = false;
-//   }
-// }
-
-// // 接受到消息的回调
-// function WebSocketOnMessage(event) {
-//   let e = JSON.parse(event.data);
-//   console.log("e ========> ", e);
-//   // 重置心跳
-//   heartCheck();
-//   if (!e.type) return;
-//   if (e.type == "heartbeat") {
-//     onlineUser.value = e.msg;
-//     return;
-//   }
-
-//   if (e.type == "messageList") {
-//     chatList.value = e.list;
-//     return;
-//   }
-
-//   let data = null;
-//   data = {
-//     type: e.type,
-//     content: e.content,
-//     userName: e.userName,
-//   };
-//   if (!data) return;
-//   chatList.value.push(data);
-// }
-// // 心脏包
-// function heartCheck() {
-//   heartbeatClearTimeout();
-//   startHeartbeat();
-// }
-
-// const startHeartbeat = () => {
-//   timeObj = setTimeout(() => {
-//     ws.send(
-//       JSON.stringify({
-//         type: "heartbeat",
-//         content: "前端心脏包",
-//       })
-//     );
-//     timeObj2 = setTimeout(() => {
-//       ws.close();
-//     }, 60 * 1000);
-//   }, 10 * 1000);
-// };
-
-// // 清除定时器
-// const heartbeatClearTimeout = () => {
-//   clearTimeout(timeObj);
-//   clearTimeout(timeObj2);
-// };
-
-// // 重新链接的确认事件
-// const confirm = () => {
-//   initWebSocket();
-//   dialogVisible.value = false;
-// };
-
-// // 点击发送
-// const inputConfirm = () => {
-//   if (!value.value) return;
-//   console.log("value ==========> ", value.value);
-//   let data = {
-//     type: "msg",
-//     userName: query.userName,
-//     content: value.value,
-//   };
-//   ws.send(JSON.stringify(data));
-//   value.value = "";
-// };
 </script>
 
 <style lang="less" scoped>
