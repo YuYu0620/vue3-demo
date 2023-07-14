@@ -2,13 +2,13 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../view/HomeView.vue'
 import AboutView from '../view/AboutView.vue'
 import RoomsList from "../view/roomList.vue"
-
+import ChartDemo from "../view/chartDemo.vue"
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
       path: '/',
-      redirect: "/home"
+      redirect: "/chartDemo"
     },
     {
       path: '/home',
@@ -16,9 +16,9 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/chat',
-      name: 'chat',
-      component: AboutView
+      path: '/chartDemo',
+      name: 'chartDemo',
+      component: ChartDemo
     },
     {
       path: '/roomList',
